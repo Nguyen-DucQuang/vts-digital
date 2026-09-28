@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="vi">
 <head>
 <meta charset="utf-8">
@@ -787,8 +787,8 @@
         <form id="leadForm" novalidate>
           <div class="row2">
             <div class="field" id="f-parent">
-              <label for="parentName">Họ tên phụ huynh <span class="req" aria-hidden="true">*</span></label>
-              <input id="parentName" name="parent_name" type="text" autocomplete="name" placeholder="Nguyễn Thị Lan" required aria-describedby="e-parent">
+              <label for="parentName">Họ tên phụ huynh <span class="opt">(không bắt buộc)</span></label>
+              <input id="parentName" name="parent_name" type="text" autocomplete="name" placeholder="Nguyễn Thị Lan">
               <p class="err" id="e-parent" aria-live="polite"></p>
             </div>
             <div class="field" id="f-phone">
@@ -799,17 +799,18 @@
           </div>
           <div class="row2">
             <div class="field" id="f-child">
-              <label for="childName">Tên học sinh <span class="opt">(không bắt buộc)</span></label>
-              <input id="childName" name="child_name" type="text" placeholder="Bé An">
+              <label for="childName">Họ tên học viên <span class="req" aria-hidden="true">*</span></label>
+              <input id="childName" name="child_name" type="text" placeholder="Nguyễn An" required aria-describedby="e-child">
+              <p class="err" id="e-child" aria-live="polite"></p>
             </div>
             <div class="field" id="f-grade">
-              <label for="grade">Con đang học lớp <span class="req" aria-hidden="true">*</span></label>
+              <label for="grade">Cấp học hiện tại <span class="req" aria-hidden="true">*</span></label>
               <select id="grade" name="grade" required aria-describedby="e-grade">
-                <option value="">Chọn lớp</option>
-                <option>Lớp 1</option><option>Lớp 2</option><option>Lớp 3</option>
-                <option>Lớp 4</option><option>Lớp 5</option><option>Lớp 6</option>
-                <option>Lớp 7</option><option>Lớp 8</option><option>Lớp 9</option>
-                <option>Lớp 10</option><option>Lớp 11</option><option>Lớp 12</option>
+                <option value="">Chọn cấp học</option>
+                <option>Tiểu học</option>
+                <option>THCS</option>
+                <option>THPT</option>
+                <option>Sau THPT</option>
               </select>
               <p class="err" id="e-grade" aria-live="polite"></p>
             </div>
@@ -921,6 +922,7 @@ const CONFIG = {
   dateText: "Sáng thứ 7 hằng tuần",
   workshopTime: "",                  // giờ bắt đầu–kết thúc, VD "09:00–10:30". Để trống = chỉ ghi "sáng"
   seatsText: "12 học sinh",          // DỮ LIỆU MẪU – sĩ số tối đa mỗi buổi
+  firstWorkshopDate: "2026-10-17",   // ngày thứ 7 đầu tiên hiển thị trong form
   weeksAhead: 4,                     // số thứ 7 sắp tới hiển thị trong form
   skipDates: [],                     // thứ 7 nghỉ (lễ, Tết), dạng "2026-10-31"
   zaloUrl: "https://zalo.me/2979259251784093657",
@@ -1002,13 +1004,9 @@ const CONFIG = {
   sgs.forEach(x => x.addEventListener('change', () => { updSigns(); if (!sgSent) { sgSent = true; window.dataLayer.push({event:'signs_quiz_start'}); } }));
   updSigns();
   const slot = document.getElementById('slot');
-  // Tự sinh danh sách thứ 7 sắp tới (bỏ thứ 7 hôm nay nếu đã quá 8 giờ sáng)
+  // Tự sinh danh sách thứ 7 từ ngày mở workshop đầu tiên
   const pad = n => String(n).padStart(2, '0');
-  const d = new Date(); d.setHours(0, 0, 0, 0);
-  const now = new Date();
-  let add = (6 - d.getDay() + 7) % 7;
-  if (add === 0 && now.getHours() >= 8) add = 7;
-  d.setDate(d.getDate() + add);
+  const d = new Date(CONFIG.firstWorkshopDate + 'T00:00:00');
   let n = 0;
   while (n < CONFIG.weeksAhead) {
     const iso = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
@@ -1048,10 +1046,11 @@ const CONFIG = {
 
   function validate(){
     const el = form.elements; let first = null; const bad = (id, msg, node) => { setErr(id, msg); if (msg && !first) first = node; };
-    bad('parent', el.parent_name.value.trim().length < 2 ? 'Vui lòng nhập họ tên phụ huynh.' : '', el.parent_name);
+    bad('parent', '', el.parent_name);
+    bad('child', el.child_name.value.trim().length < 2 ? 'Vui lòng nhập họ tên học viên.' : '', el.child_name);
     const p = normPhone(el.phone.value);
     bad('phone', !p ? 'Vui lòng nhập số điện thoại.' : (!/^0(3|5|7|8|9)\d{8}$/.test(p) ? 'Số điện thoại chưa đúng. Ví dụ: 0912 345 678.' : ''), el.phone);
-    bad('grade', !el.grade.value ? 'Vui lòng chọn lớp của con.' : '', el.grade);
+    bad('grade', !el.grade.value ? 'Vui lòng chọn cấp học hiện tại.' : '', el.grade);
     bad('slot', !el.slot.value ? 'Vui lòng chọn ngày thứ 7 con tham gia.' : '', el.slot);
     bad('consent', !el.consent.checked ? 'Vui lòng tick đồng ý để VTS liên hệ xác nhận.' : '', el.consent);
     if (first) first.focus();
